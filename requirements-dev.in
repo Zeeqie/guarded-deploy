@@ -1,0 +1,7 @@
+-c requirements.txt
+-r requirements.in
+pytest
+pytest-cov
+moto[dynamodb]
+httpx
+ruff
