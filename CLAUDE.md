@@ -48,3 +48,9 @@ Work in small, verifiable steps; stop at each CHECKPOINT with a report and wait 
     - Decisions added to DECISIONS.md
     - Anything uncertain, skipped, or to double-check
     Then WAIT for "continue".
+
+## Day 3 reminders
+- Build pushed images with `--provenance=false` (Lambda rejects OCI image indexes / attestation manifests).
+- Use the ECR-reported compressed image size in the README (not `docker images`).
+- Docker targets: `local` (has RIE, for local testing) and `prod` (default; what CI scans and Lambda runs).
+- Bump `AL2023_RELEASE` (and re-scan) whenever the base digest is bumped.
