@@ -54,3 +54,4 @@ Work in small, verifiable steps; stop at each CHECKPOINT with a report and wait 
 - Use the ECR-reported compressed image size in the README (not `docker images`).
 - Docker targets: `local` (has RIE, for local testing) and `prod` (default; what CI scans and Lambda runs).
 - Bump `AL2023_RELEASE` (and re-scan) whenever the base digest is bumped.
+- AL2023_RELEASE must be bumped manually (README Limitations).

@@ -9,7 +9,7 @@ Runs on every pull request to `main`: lint -> test -> security. Each job only st
 | `on: pull_request: branches: [main]` | Run on PRs targeting main | Gate changes *before* they merge | Broken code reaches main |
 | `on: workflow_dispatch` | Adds a manual "Run workflow" button | Re-run without a dummy commit | Only inconvenience |
 | `permissions: contents: read` | Limits the auto-issued `GITHUB_TOKEN` to read-only | Least privilege: a compromised step can't push code or edit releases | Default token may be broader (repo setting dependent) |
-| `concurrency.group: ci-<PR number or ref>` | One run per PR at a time | Same PR = same group | Parallel duplicate runs waste minutes |
+| `concurrency.group: <workflow>-<PR number or ref>` | One run per PR at a time; falls back to the branch ref for manual runs, which have no PR number | Same PR = same group | Parallel duplicate runs waste minutes |
 | `cancel-in-progress: true` | New push cancels the older run on that PR | Superseded results are useless | Stale runs keep consuming runner time |
 | `env.TRIVY_VERSION`, `TRIVY_SHA256` | Pins the scanner version and expected checksum of its tarball | Reproducible scans; tamper detection | A swapped binary would run unnoticed |
 
