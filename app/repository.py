@@ -1,5 +1,6 @@
 """DynamoDB access for the link shortener. Nothing else in the app talks to AWS."""
 
+import functools
 import os
 import secrets
 
@@ -13,7 +14,10 @@ class CodeGenerationError(Exception):
     """Raised when no unused short code could be stored within MAX_ATTEMPTS."""
 
 
+@functools.cache
 def _table():
+    # Built once per process and reused: on Lambda that is once per cold start,
+    # so warm invocations reuse the same HTTP connection pool.
     return boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
 
 

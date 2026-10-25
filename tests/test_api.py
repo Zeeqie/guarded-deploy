@@ -1,3 +1,5 @@
+import functools
+
 from app import repository
 
 
@@ -77,3 +79,19 @@ def test_generate_code_is_urlsafe_and_varies():
     codes = {repository.generate_code() for _ in range(50)}
     assert len(codes) > 1
     assert all(len(c) == 8 and c.replace("-", "").replace("_", "").isalnum() for c in codes)
+
+
+def test_unexpected_dynamodb_error_is_not_swallowed(table, monkeypatch):
+    """Unit: a ClientError other than a collision is re-raised -> API returns 500."""
+    from botocore.exceptions import ClientError
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    class Denied:
+        def put_item(self, **_):
+            raise ClientError({"Error": {"Code": "AccessDeniedException"}}, "PutItem")
+
+    monkeypatch.setattr(repository, "_table", functools.cache(lambda: Denied()))
+    client = TestClient(app, raise_server_exceptions=False)
+    assert client.post("/links", json={"url": "https://example.com"}).status_code == 500
