@@ -23,6 +23,7 @@ COPY app ${LAMBDA_TASK_ROOT}/app
 
 # Stamped at build time so /health can report which release is live.
 ARG GIT_SHA=dev
+ENV GIT_SHA=${GIT_SHA}
 
 CMD ["app.main.handler"]
 
