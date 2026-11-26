@@ -232,3 +232,6 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 # .terraform.lock.hcl IS committed (pins provider versions + hashes).
+
+# macOS Finder metadata
+.DS_Store
