@@ -55,3 +55,8 @@ Work in small, verifiable steps; stop at each CHECKPOINT with a report and wait 
 - Docker targets: `local` (has RIE, for local testing) and `prod` (default; what CI scans and Lambda runs).
 - Bump `AL2023_RELEASE` (and re-scan) whenever the base digest is bumped.
 - AL2023_RELEASE must be bumped manually (README Limitations).
+- CD workflow must install Terraform 1.16.1 exactly (required_version is "~> 1.16.0").
+- bootstrap/ state bucket has lifecycle prevent_destroy: teardown must remove that block first (and empty the versioned bucket).
+
+## Local tooling notes
+- Local `trivy fs` must use `--skip-dirs .venv` (moto test fixtures in .venv look like secrets; CI has no .venv).
