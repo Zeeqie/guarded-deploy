@@ -148,7 +148,7 @@ typing-inspection==0.4.4
     #   -c requirements.txt
     #   fastapi
     #   pydantic
-urllib3==2.8.0
+urllib3==2.5.0
     # via
     #   -c requirements.txt
     #   botocore
