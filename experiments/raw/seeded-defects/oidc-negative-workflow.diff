@@ -1,0 +1,84 @@
+diff --git a/.github/workflows/cd.yml b/.github/workflows/cd.yml
+index b00a5cb..ae713f6 100644
+--- a/.github/workflows/cd.yml
++++ b/.github/workflows/cd.yml
+@@ -32,8 +32,7 @@ env:
+ 
+ jobs:
+   deploy:
+-    # workflow_dispatch can target any branch; the trust policy would reject it anyway.
+-    if: github.ref == 'refs/heads/main'
++    # OIDC NEGATIVE TEST BRANCH: branch guard removed on purpose so the trust policy is what gets tested.
+     runs-on: ubuntu-24.04-arm
+     timeout-minutes: 30
+     steps:
+@@ -58,64 +57,9 @@ jobs:
+           role-session-name: cd-${{ github.run_id }}-${{ github.run_attempt }}
+           mask-aws-account-id: true # public repo: keep the account ID out of public logs
+ 
+-      - name: ECR login (aws CLI)
+-        id: ecr
++      # Everything that could push or deploy is removed on this branch. If we ever get here,
++      # AWS issued credentials to a non-main ref: the trust policy is broken. Fail loudly.
++      - name: NEGATIVE TEST - must never be reached
+         run: |
+-          account="$(aws sts get-caller-identity --query Account --output text)"
+-          echo "::add-mask::${account}"
+-          registry="${account}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+-          aws ecr get-login-password | docker login --username AWS --password-stdin "$registry"
+-          echo "image_uri=${registry}/${ECR_REPOSITORY}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+-
+-      - name: Does this SHA's image already exist? (tags are immutable)
+-        id: exists
+-        run: |
+-          if out="$(aws ecr describe-images --repository-name "$ECR_REPOSITORY" \
+-              --image-ids imageTag="$GITHUB_SHA" 2>&1)"; then
+-            echo "Image tag already in ECR: skipping build/scan/push"
+-            echo "exists=true" >> "$GITHUB_OUTPUT"
+-          elif grep -q ImageNotFoundException <<<"$out"; then
+-            echo "Image tag not in ECR yet: building, scanning, pushing"
+-            echo "exists=false" >> "$GITHUB_OUTPUT"
+-          else
+-            echo "$out" >&2 # e.g. AccessDenied: fail loudly, never guess
+-            exit 1
+-          fi
+-
+-      - name: Install Trivy ${{ env.TRIVY_VERSION }}
+-        if: steps.exists.outputs.exists == 'false'
+-        run: |
+-          curl -fsSL -o trivy.tar.gz \
+-            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-ARM64.tar.gz"
+-          echo "${TRIVY_SHA256}  trivy.tar.gz" | sha256sum -c -
+-          tar -xzf trivy.tar.gz -C "$RUNNER_TEMP" trivy
+-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+-
+-      - name: Build prod image
+-        if: steps.exists.outputs.exists == 'false'
+-        env:
+-          IMAGE_URI: ${{ steps.ecr.outputs.image_uri }}
+-        run: |
+-          docker build --target prod --platform linux/arm64 \
+-            --provenance=false --sbom=false \
+-            --build-arg GIT_SHA="$GITHUB_SHA" -t "$IMAGE_URI" .
+-
+-      - name: Trivy image scan (gate before push)
+-        if: steps.exists.outputs.exists == 'false'
+-        env:
+-          IMAGE_URI: ${{ steps.ecr.outputs.image_uri }}
+-        run: trivy image --severity HIGH,CRITICAL --exit-code 1 "$IMAGE_URI"
+-
+-      - name: Push image
+-        if: steps.exists.outputs.exists == 'false'
+-        env:
+-          IMAGE_URI: ${{ steps.ecr.outputs.image_uri }}
+-        run: docker push "$IMAGE_URI"
+-
+-      - name: Deploy (smoke test -> move alias -> live check -> auto-rollback)
+-        env:
+-          IMAGE_URI: ${{ steps.ecr.outputs.image_uri }}
+-          GIT_SHA: ${{ github.sha }}
+-          API_URL: ${{ vars.API_URL }}
+-          INJECT_LIVE_CHECK_FAILURE: ${{ github.event_name == 'workflow_dispatch' && inputs.inject_live_check_failure }}
+-        run: scripts/deploy.sh
++          echo "::error::Credentials were issued to ${GITHUB_REF}: trust policy is NOT restricting to main"
++          exit 1

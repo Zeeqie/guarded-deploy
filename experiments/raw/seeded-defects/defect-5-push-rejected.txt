@@ -1,0 +1,67 @@
+remote: error: GH013: Repository rule violations found for refs/heads/experiment/defect-5-leaked-key.        
+remote: 
+remote: - GITHUB PUSH PROTECTION        
+remote:   —————————————————————————————————————————        
+remote:     Resolve the following violations before pushing again        
+remote: 
+remote:     - Push cannot contain secrets        
+remote: 
+remote:             
+remote:      (?) Learn how to resolve a blocked push        
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push        
+remote:             
+remote:             
+remote:       —— Amazon AWS Access Key ID ——————————————————————————        
+remote:        locations:        
+remote:          - commit: 36c6173947af8958e4cbce87887b524ac3a6a0b0        
+remote:            path: app/seeded_defect_5.py:5        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/Zeeqie/guarded-deploy/security/secret-scanning/unblock-secret/<redacted>        
+remote:             
+remote:             
+remote:       —— Amazon AWS Secret Access Key ——————————————————————        
+remote:        locations:        
+remote:          - commit: 36c6173947af8958e4cbce87887b524ac3a6a0b0        
+remote:            path: app/seeded_defect_5.py:6        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/Zeeqie/guarded-deploy/security/secret-scanning/unblock-secret/<redacted>        
+remote:             
+remote: 
+remote: 
+To https://github.com/Zeeqie/guarded-deploy.git
+ ! [remote rejected] experiment/defect-5-leaked-key -> experiment/defect-5-leaked-key (error: GH013: Repository rule violations found for refs/heads/experiment/defect-5-leaked-key.
+
+- GITHUB PUSH PROTECTION
+  —————————————————————————————————————————
+    Resolve the following violations before pushing again
+
+    - Push cannot contain secrets
+
+    
+     (?) Learn how to resolve a blocked push
+     https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+    
+    
+      —— Amazon AWS Access Key ID ——————————————————————————
+       locations:
+         - commit: 36c6173947af8958e4cbce87887b524ac3a6a0b0
+           path: app/seeded_defect_5.py:5
+    
+       (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+       https://github.com/Zeeqie/guarded-deploy/security/secret-scanning/unblock-secret/<redacted>
+    
+    
+      —— Amazon AWS Secret Access Key ——————————————————————
+       locations:
+         - commit: 36c6173947af8958e4cbce87887b524ac3a6a0b0
+           path: app/seeded_defect_5.py:6
+    
+       (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+       https://github.com/Zeeqie/guarded-deploy/security/secret-scanning/unblock-secret/<redacted>
+    
+
+
+)
+error: failed to push some refs to 'https://github.com/Zeeqie/guarded-deploy.git'
