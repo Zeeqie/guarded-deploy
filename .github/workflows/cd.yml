@@ -75,6 +75,7 @@ jobs:
             echo "Image tag already in ECR: skipping build/scan/push"
             echo "exists=true" >> "$GITHUB_OUTPUT"
           elif grep -q ImageNotFoundException <<<"$out"; then
+            echo "Image tag not in ECR yet: building, scanning, pushing"
             echo "exists=false" >> "$GITHUB_OUTPUT"
           else
             echo "$out" >&2 # e.g. AccessDenied: fail loudly, never guess
