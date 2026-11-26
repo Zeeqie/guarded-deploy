@@ -27,18 +27,19 @@ resource "aws_ecr_repository" "app" {
   }
 }
 
-# Keep storage cost bounded: only the 5 newest images survive (enough to roll back).
+# Keep storage cost bounded: only the 10 newest images (by push time) survive. 10, not 5,
+# so a run of failed deploys/experiments cannot expire the image "live" still runs. See DECISIONS.md.
 resource "aws_ecr_lifecycle_policy" "app" {
   repository = aws_ecr_repository.app.name
 
   policy = jsonencode({
     rules = [{
       rulePriority = 1
-      description  = "Keep last 5 images"
+      description  = "Keep last 10 images"
       selection = {
         tagStatus   = "any"
         countType   = "imageCountMoreThan"
-        countNumber = 5
+        countNumber = 10
       }
       action = { type = "expire" }
     }]
