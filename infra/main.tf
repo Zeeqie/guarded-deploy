@@ -86,6 +86,12 @@ resource "aws_dynamodb_table" "links" {
   }
 
   # No server_side_encryption block = AWS-owned key: encrypted at rest, free.
+
+  # Continuous backups: restore the table to any second in the last 35 days.
+  # Billed per GB-month of table size ($0.228/GB-Mo, Pricing API), so ~$0 for a tiny table.
+  point_in_time_recovery {
+    enabled = true
+  }
 }
 
 # ---------------- API Gateway HTTP API -> alias "live" ----------------
@@ -109,10 +115,31 @@ resource "aws_apigatewayv2_route" "default" {
   target    = "integrations/${aws_apigatewayv2_integration.live.id}"
 }
 
+# Access logs: one JSON line per request. HTTP APIs deliver straight to the log group
+# (no account-level API Gateway CloudWatch role; that is a REST API requirement).
+# Reason: KMS CMK costs $1/key-month + requests (credit-funded Free plan); CloudWatch encrypts logs at rest by default. See DECISIONS.md.
+#trivy:ignore:AWS-0017:exp:2027-04-23
+resource "aws_cloudwatch_log_group" "api_access" {
+  name              = "/aws/apigateway/${var.name}"
+  retention_in_days = var.log_retention_days
+}
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.http.id
   name        = "$default" # URL has no /stage prefix
   auto_deploy = true
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_access.arn
+    format = jsonencode({
+      requestId        = "$context.requestId"
+      ip               = "$context.identity.sourceIp"
+      routeKey         = "$context.routeKey"
+      status           = "$context.status"
+      responseLatency  = "$context.responseLatency"
+      integrationError = "$context.integrationErrorMessage"
+    })
+  }
 
   # Cost guard for a public URL: excess requests get 429 before they reach Lambda.
   default_route_settings {

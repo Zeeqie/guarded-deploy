@@ -44,6 +44,8 @@ resource "aws_iam_role_policy" "lambda_exec" {
   policy = data.aws_iam_policy_document.lambda_exec.json
 }
 
+# Reason: X-Ray not confirmed free on this Free plan; the app is one function + one table, CloudWatch logs suffice. See DECISIONS.md.
+#trivy:ignore:AWS-0066:exp:2027-04-23
 resource "aws_lambda_function" "app" {
   function_name = local.function_name
   role          = aws_iam_role.lambda_exec.arn
