@@ -10,10 +10,15 @@ variable "name" {
   default     = "guarded-deploy"
 }
 
-variable "github_repo" {
-  description = "owner/repo allowed to assume the deploy role via OIDC."
+variable "github_oidc_subject_repo" {
+  description = <<-EOT
+    Repo part of the GitHub OIDC `sub` claim allowed to assume the deploy role.
+    This repo uses GitHub's immutable subject (owner@owner_id/repo@repo_id), so a deleted
+    and re-created repo with the same name can't match. Check before changing:
+    gh api repos/<owner>/<repo>/actions/oidc/customization/sub (sub_claim_prefix).
+  EOT
   type        = string
-  default     = "Zeeqie/guarded-deploy"
+  default     = "Zeeqie@260482962/guarded-deploy@1431477050"
 }
 
 variable "initial_image_tag" {
