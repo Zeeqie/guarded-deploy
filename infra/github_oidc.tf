@@ -27,7 +27,8 @@ data "aws_iam_policy_document" "github_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
+      # Exact claim seen in CloudTrail for the failed first CD run (docs/incidents.md).
+      values = ["repo:${var.github_oidc_subject_repo}:ref:refs/heads/main"]
     }
   }
 }

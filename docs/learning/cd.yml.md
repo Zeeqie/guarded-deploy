@@ -34,7 +34,7 @@ It deliberately does **not** run Terraform (that is applied from the laptop) and
 | `actions/checkout@<sha> # v7.0.1`, `persist-credentials: false` | Clone the commit; no token left in `.git/config` | Same pinning rule as CI | — | — |
 | "Tool versions" step | Prints aws, docker, jq, curl versions | Proves the runner has what `deploy.sh` needs instead of assuming | A missing tool shows up as a confusing failure later | — |
 | `aws-actions/configure-aws-credentials@<sha> # v6.3.0` | OIDC token → `AssumeRoleWithWebIdentity` → exports temp creds for later steps | AWS-maintained, masks credentials in logs; no advisories when checked. v6.3.0 over v6.3.1 (released 1 day earlier, proxy-only fix) for soak time | No AWS credentials | "Where are your AWS keys?" (answer: there are none) |
-| `role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}` | Role ARN comes from a repo **variable** | A role ARN is an identifier, not a credential; a variable keeps the account ID out of the code | Hardcoded account ID in a public repo | "Is the role ARN a secret?" |
+| `role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}` | Role ARN comes from a repo **secret** | Not a credential, but it contains the account ID, and the action echoes its inputs *before* it can mask the account ID. Only secrets print as `***` (this leaked once: `docs/incidents.md`) | Account ID in public logs | "Is the role ARN a secret?" (no, but treat it like one in public logs) |
 | `role-session-name: cd-<run_id>-<attempt>` | Names the STS session | CloudTrail shows which workflow run did what | Generic session names in audit logs | "How would you trace an AWS change back to a pipeline run?" |
 | `mask-aws-account-id: true` | Masks the account ID in logs | Public repo = public logs | Account ID visible to everyone | — |
 | ECR login step | `get-caller-identity` → registry host; `get-login-password \| docker login --password-stdin` | aws CLI over a third-party login action. The password goes through a pipe, never an argument or log line. `::add-mask::` hides the account ID | Push fails: unauthenticated | "How does Docker authenticate to ECR?" |
@@ -51,6 +51,7 @@ It deliberately does **not** run Terraform (that is applied from the laptop) and
 | `API_URL: ${{ vars.API_URL }}` | Public base URL for the live check | The deploy role has no API Gateway read permission, so it can't look it up | Live check has nowhere to curl | — |
 | `run: scripts/deploy.sh` | Smoke → alias → live check → rollback | Logic lives in a script that is shellchecked and tested offline | — | See [deploy.sh.md](deploy.sh.md) |
 
-## Repo variables this workflow needs (set once, not secrets)
+## Repo settings this workflow needs
 
-`AWS_DEPLOY_ROLE_ARN` (Terraform output `deploy_role_arn`) and `API_URL` (Terraform output `api_url`).
+- Secret `AWS_DEPLOY_ROLE_ARN` (Terraform output `deploy_role_arn`).
+- Variable `API_URL` (Terraform output `api_url`). It's the public URL anyway, so it doesn't need masking.

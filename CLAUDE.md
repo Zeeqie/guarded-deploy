@@ -56,7 +56,9 @@ Work in small, verifiable steps; stop at each CHECKPOINT with a report and wait 
 - Bump `AL2023_RELEASE` (and re-scan) whenever the base digest is bumped.
 - AL2023_RELEASE must be bumped manually (README Limitations).
 - CD does NOT run Terraform (applied from laptop only). CD only pushes images, publishes versions, moves the alias. Do not add state-bucket/read permissions to the deploy role. Any workflow that does run Terraform must install 1.16.1 exactly (required_version "~> 1.16.0").
-- CD jobs must NOT use a GitHub `environment:` (it changes the OIDC sub claim; the trust policy requires `repo:Zeeqie/guarded-deploy:ref:refs/heads/main`).
+- CD jobs must NOT use a GitHub `environment:` (it changes the OIDC sub claim; the trust policy requires `repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/main`, the immutable subject).
+- Before writing or changing ANY OIDC trust policy, check the repo's sub customization: `gh api repos/<owner>/<repo>/actions/oidc/customization/sub` (this repo has `use_immutable_subject: true`). Debug rejected tokens via CloudTrail `AssumeRoleWithWebIdentity` events (`userIdentity.principalId` holds the presented sub).
+- Deploy role ARN is a repo SECRET (`secrets.AWS_DEPLOY_ROLE_ARN`), not a variable: action inputs are echoed before account-ID masking.
 - bootstrap/ state bucket has lifecycle prevent_destroy: teardown must remove that block first (and empty the versioned bucket).
 
 ## Local tooling notes
