@@ -2,7 +2,7 @@
 # Resolved with: docker buildx imagetools inspect public.ecr.aws/lambda/python:3.12
 ARG BASE=public.ecr.aws/lambda/python:3.12@sha256:25aee9bac65f131c5d090d3e3a36ccf232d65cf3e6c1dbd0bffd43ca7ce34406
 # AL2023 repos are frozen per release; pinning --releasever keeps the patched OS reproducible.
-ARG AL2023_RELEASE=2023.12.20261026
+ARG AL2023_RELEASE=2023.12.20261120
 
 # --- build stage: install runtime deps only (no dev tools reach the final image) ---
 FROM ${BASE} AS build
