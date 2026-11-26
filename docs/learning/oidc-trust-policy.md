@@ -26,7 +26,9 @@ STS: signature valid? aud ok? sub ok? --> temporary creds for guarded-deploy-git
 | `StringEquals`, not `StringLike` | Exact match, no wildcards | `repo:Zeeqie/*` or `ref:*` would also allow PR branches and forks of the trust | Feature branches or PRs could deploy | "How would you let PR jobs plan but not deploy?" (separate read-only role with its own `sub`) |
 | `max_session_duration = 3600` | Credentials last at most 1 hour | A deploy takes minutes; less lifetime means less value if leaked | Default is also 1h; set explicitly as documentation | — |
 
-**Gotcha:** if the CD job uses a GitHub `environment:`, the `sub` becomes `repo:Zeeqie/guarded-deploy:environment:<name>` and this policy rejects it. Change `sub` to match.
+**Rule: CD jobs must NOT use a GitHub `environment:`.** With an environment, the `sub` claim becomes `repo:Zeeqie/guarded-deploy:environment:<name>` instead of `...:ref:refs/heads/main`, and this policy rejects the token, by design.
+
+**Scope rule: CD never runs Terraform.** Terraform is applied from the owner's laptop only. CD only pushes images, publishes versions, and moves the alias. That's why the role below has no state-bucket, IAM, or broad read permissions: a stolen CD token can't change infrastructure.
 
 ## Deploy role permissions (what the role may do)
 
