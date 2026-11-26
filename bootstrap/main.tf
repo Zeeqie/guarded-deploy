@@ -26,6 +26,8 @@ resource "aws_s3_bucket_versioning" "state" {
 
 # SSE-S3 (AES256, AWS-managed keys): encrypted at rest at no extra cost.
 # A customer-managed KMS key would cost ~$1/month plus per-request charges.
+# Reason: CMK costs $1/key-month + $0.03/10k req (credit-funded Free plan); see DECISIONS.md. Re-decide at credit expiry.
+#trivy:ignore:AWS-0132:exp:2027-04-23
 resource "aws_s3_bucket_server_side_encryption_configuration" "state" {
   bucket = aws_s3_bucket.state.id
 
