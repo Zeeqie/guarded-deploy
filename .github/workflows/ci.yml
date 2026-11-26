@@ -33,6 +33,12 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: ruff check .
       - run: ruff format --check .
+      # Preinstalled on the runner image (listed in actions/partner-runner-images
+      # Ubuntu2404-Readme.md); --version proves it in the log rather than assuming.
+      - name: shellcheck scripts/
+        run: |
+          shellcheck --version
+          shellcheck scripts/*.sh
 
   test:
     needs: lint
