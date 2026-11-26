@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Fake aws CLI for tests/test_deploy_sh.py. State lives in files under $SIM_STATE:
+#   alias          version "live" points to
+#   ver            highest published version
+#   image          image URI of $LATEST
+#   img_<N>/sha_<N> image URI / git SHA of version N
+# Any call deploy.sh isn't expected to make exits 99, so new AWS calls can't sneak in.
+set -euo pipefail
+st="$SIM_STATE"
+echo "$*" >>"$st/calls"
+arg() {
+  local k="$1"
+  shift
+  while [[ $# -gt 0 ]]; do
+    if [[ "$1" == "$k" ]]; then
+      echo "$2"
+      return
+    fi
+    shift
+  done
+}
+case "$1 $2" in
+"lambda get-alias") cat "$st/alias" ;;
+"lambda get-function") cat "$st/img_$(cat "$st/alias")" ;;
+"lambda wait") ;;
+"lambda update-alias")
+  v="$(arg --function-version "$@")"
+  # SIM_ALIAS_STUCK=1: writes back to the original version are silently lost.
+  if [[ "${SIM_ALIAS_STUCK:-}" != 1 || "$v" != "$(cat "$st/first_alias")" ]]; then
+    echo "$v" >"$st/alias"
+  fi
+  echo "$v"
+  ;;
+"lambda update-function-code")
+  u="$(arg --image-uri "$@")"
+  if [[ "$u" != "$(cat "$st/image")" ]]; then # unchanged code => no new version
+    n=$(($(cat "$st/ver") + 1))
+    echo "$n" >"$st/ver"
+    echo "$u" >"$st/image"
+    echo "$u" >"$st/img_$n"
+    echo "${u##*:}" >"$st/sha_$n"
+  fi
+  cat "$st/ver"
+  ;;
+"lambda invoke")
+  out="${*: -1}"
+  q="$(arg --qualifier "$@")"
+  version="${SIM_SMOKE_VERSION:-$(cat "$st/sha_$q")}"
+  printf '{"statusCode":%s,"body":"{\\"status\\":\\"ok\\",\\"version\\":\\"%s\\"}"}' \
+    "${SIM_SMOKE_STATUS:-200}" "$version" >"$out"
+  if [[ -n "${SIM_FUNCTION_ERROR:-}" ]]; then
+    echo '{"StatusCode":200,"FunctionError":"Unhandled"}'
+  else
+    echo '{"StatusCode":200}'
+  fi
+  ;;
+*)
+  echo "fake aws: unexpected call: $*" >&2
+  exit 99
+  ;;
+esac

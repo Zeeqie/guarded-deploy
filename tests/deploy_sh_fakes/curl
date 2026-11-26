@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Fake curl: the public URL serves whatever version alias "live" points to.
+set -euo pipefail
+out=""
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "-o" ]]; then out="$2"; fi
+  shift
+done
+printf '{"status":"ok","version":"%s"}' "$(cat "$SIM_STATE/sha_$(cat "$SIM_STATE/alias")")" >"$out"
+printf '200'

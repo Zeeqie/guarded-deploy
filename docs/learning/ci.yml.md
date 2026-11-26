@@ -24,6 +24,7 @@ Runs on every pull request to `main`: lint -> test -> security. Each job only st
 | `actions/setup-python` with `cache: pip` | Installs Python 3.12 and caches pip downloads keyed on `requirements-dev.txt` | Same version as Lambda; faster installs | Wrong Python version; slower runs |
 | `pip install -r requirements-dev.txt` | Installs the pinned lockfile | Same versions as local | Different versions than tested locally |
 | `ruff check .` / `ruff format --check .` | Lint rules and formatting verification (no rewrite) | Cheap, fast feedback first | Style and bug-pattern issues merge |
+| `shellcheck --version` + `shellcheck scripts/*.sh` | Static analysis of the deploy script (quoting, unset vars, unreachable code) | `deploy.sh` holds rollback logic; shell bugs there are production bugs. ShellCheck comes with the runner image; `--version` proves it in the log | A quoting bug in rollback only shows up during an incident |
 | `needs: lint` / `needs: test` | Orders jobs | Fail fast, don't build images for code that doesn't lint or pass tests | Everything runs in parallel; wasted minutes on failures |
 | `pytest` | Runs tests with moto; coverage gate comes from `fail_under = 80` in `pyproject.toml` | Behaviour + coverage regression guard | Untested changes merge |
 | Install Trivy step | Downloads the release tarball, verifies the pinned sha256 with `sha256sum -c`, puts it on `PATH` | We use a pinned binary instead of `aquasecurity/trivy-action` after the March 2026 compromise (GHSA-69fq-xp46-6x23) | Third-party action code runs with our job's access |
