@@ -2,7 +2,7 @@
 # It cannot store its own state in a bucket that does not exist yet, so it
 # deliberately uses LOCAL state (terraform.tfstate, gitignored).
 terraform {
-  required_version = "~> 1.16"
+  required_version = "~> 1.16.0"
 
   required_providers {
     aws = {
