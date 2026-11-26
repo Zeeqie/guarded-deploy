@@ -68,8 +68,18 @@ update-alias live -> NEW ─> curl API_URL/health ─fail─> update-alias live 
 
 ## Rollback depth limit
 
-Automatic rollback is always exactly **one step** (to PREV). Manual rollback is safe only to versions whose image is still in ECR. The lifecycle policy keeps the 5 newest images by push time, so that means at most **4 versions back** (see DECISIONS.md). Images from failed deploys use up those 5 slots too.
+Automatic rollback is always exactly **one step** (to PREV). Manual rollback is safe only to versions whose image is still in ECR. The lifecycle policy keeps the 10 newest images by push time, so that means at most **9 versions back** (see DECISIONS.md). Images from failed deploys use up those 10 slots too.
 
-## Tested offline
+## Tested on every PR
 
-All paths were run against fake `aws`/`curl`/`date` shims (no AWS calls): happy path, same-SHA no-op, smoke wrong version, smoke `FunctionError`, injected live-check failure with a verified revert, and a revert that fails verification (exit 2, no retry).
+`tests/test_deploy_sh.py` runs this script against fake `aws`/`curl`/`date` in `tests/deploy_sh_fakes/` (no AWS calls). It checks 7 scenarios, each with its expected exit code **and** where `live` ends up:
+
+| Scenario | Exit | Final alias |
+|---|---|---|
+| happy | 0 | NEW |
+| same SHA re-run | 0 | PREV (`NO_CHANGE`) |
+| smoke: wrong version / `FunctionError` / status 500 | 1 | PREV, never moved |
+| injected live-check failure | 1 | PREV (`ALIAS_REVERTED`) |
+| revert fails verification | 2 | NEW (`ROLLBACK_VERIFY_FAILED`, human needed) |
+
+The tests also require that no scenario ends via the exit trap's safety net. Without that check, deleting the explicit rollback would still pass, because the trap rolls back too. A mutation check confirmed this: removing `rollback` passed before that assertion and fails after it. `LIVE_CHECK_SLEEP_SECONDS=0` keeps the suite fast.

@@ -16,7 +16,7 @@ Work in small, verifiable steps; stop at each CHECKPOINT with a report and wait 
     fail at any point: alias stays/reverts to vN-1
 - Stack: Python 3.12, FastAPI + Mangum, boto3, pytest, moto, pytest-cov, ruff, Docker (multi-stage,
   base public.ecr.aws/lambda/python:3.12, arm64), Trivy, Terraform (bootstrap/ + infra/, S3 backend use_lockfile=true),
-  AWS (Lambda container image, API Gateway HTTP API -> alias, ECR keep-last-5 lifecycle, DynamoDB on-demand,
+  AWS (Lambda container image, API Gateway HTTP API -> alias, ECR keep-last-10 lifecycle, DynamoDB on-demand,
   least-privilege IAM, GitHub OIDC deploy role), GitHub Actions.
 - Plan: Day 1 app+tests+Docker+CI (laptop+GitHub only). Day 2 Terraform + OIDC. Day 3 CD workflow + rollback + experiments + README + demo GIF.
 - Machine: macOS, Apple Silicon (arm64), Homebrew. Docker, Terraform, gh, Trivy, AWS CLI installed.
@@ -61,3 +61,6 @@ Work in small, verifiable steps; stop at each CHECKPOINT with a report and wait 
 
 ## Local tooling notes
 - Local `trivy fs` must use `--skip-dirs .venv` (moto test fixtures in .venv look like secrets; CI has no .venv).
+
+## Next steps
+- ECR lifecycle rule that never expires the image `live` points to (keep-last-10 only counts pushes, so a long run of failed deploys could still expire it).
