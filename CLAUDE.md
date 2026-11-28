@@ -63,6 +63,7 @@ Work in small, verifiable steps; stop at each CHECKPOINT with a report and wait 
 
 ## Local tooling notes
 - Local `trivy fs` must use `--skip-dirs .venv` (moto test fixtures in .venv look like secrets; CI has no .venv).
+- CI's trivy fs also passes `--config-check .trivy/checks --check-namespaces user` (custom check GD-0001, wildcard IAM actions). Run `scripts/test-trivy-checks.sh` after editing any check. Fixture files are `*.tf.fixture` so the repo scan ignores them. Trivy only models ONE inline aws_iam_role_policy per role, so `tests/test_iam_no_wildcards.py` (text scan, test job) is the gate that catches a second wildcard inline policy.
 
 ## Next steps
 - ECR lifecycle rule that never expires the image `live` points to (keep-last-10 only counts pushes, so a long run of failed deploys could still expire it).

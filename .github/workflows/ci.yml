@@ -79,5 +79,11 @@ jobs:
         run: docker build --build-arg GIT_SHA="$GIT_SHA" -t guarded-deploy:ci .
       - name: Trivy image scan
         run: trivy image --severity HIGH,CRITICAL --exit-code 1 guarded-deploy:ci
-      - name: Trivy fs scan (deps, secrets, IaC/Dockerfile misconfig)
-        run: trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 .
+      # Custom checks first: proves GD-0001 still catches its known-bad fixtures, so a
+      # broken check can't silently pass the real scan below.
+      - name: Self-test custom Trivy checks
+        run: scripts/test-trivy-checks.sh
+      - name: Trivy fs scan (deps, secrets, IaC/Dockerfile misconfig + custom checks)
+        run: |
+          trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 \
+            --config-check .trivy/checks --check-namespaces user .
