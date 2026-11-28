@@ -1,0 +1,41 @@
+2026-11-28T15:15:06.052+00:00 [trial 5] precheck ok: live v11 serves 8833cd9, its image is in ECR's newest 9
+2026-11-28T15:17:16.612+00:00 [trial 5] merged 3373f7b at 2026-11-28T23:17:12+08:00 (22)
+2026-11-28T15:19:20.124+00:00 [trial 5] trial 05-L ok
+2026-11-28T15:19:26.045+00:00 [trial 6] precheck ok: live v13 serves 3373f7b, its image is in ECR's newest 9
+2026-11-28T15:21:37.772+00:00 [trial 6] merged 713d81c at 2026-11-28T23:21:33+08:00 (23)
+2026-11-28T15:22:41.813+00:00 [trial 6] [skip ci] confirmed: no push-triggered CD run for 713d81c
+https://github.com/Zeeqie/guarded-deploy/actions/runs/46159552892
+2026-11-28T15:25:15.094+00:00 [trial 6] trial 06-R ok
+2026-11-28T15:25:20.690+00:00 [trial 7] precheck ok: live v13 serves 3373f7b, its image is in ECR's newest 9
+2026-11-28T15:27:32.399+00:00 [trial 7] merged 99756c8 at 2026-11-28T23:27:28+08:00 (24)
+2026-11-28T15:29:31.118+00:00 [trial 7] trial 07-L ok
+2026-11-28T15:29:35.902+00:00 [trial 8] precheck ok: live v15 serves 99756c8, its image is in ECR's newest 9
+2026-11-28T15:31:47.838+00:00 [trial 8] merged e26ea02 at 2026-11-28T23:31:44+08:00 (25)
+2026-11-28T15:32:51.842+00:00 [trial 8] [skip ci] confirmed: no push-triggered CD run for e26ea02
+https://github.com/Zeeqie/guarded-deploy/actions/runs/46160437886
+2026-11-28T15:35:13.213+00:00 [trial 8] trial 08-R ok
+2026-11-28T15:35:19.323+00:00 [trial 9] precheck ok: live v15 serves 99756c8, its image is in ECR's newest 9
+2026-11-28T15:37:29.581+00:00 [trial 9] merged 8f19398 at 2026-11-28T23:37:25+08:00 (26)
+2026-11-28T15:39:28.174+00:00 [trial 9] trial 09-L ok
+2026-11-28T15:39:34.197+00:00 [trial 10] precheck ok: live v17 serves 8f19398, its image is in ECR's newest 9
+2026-11-28T15:41:59.330+00:00 [trial 10] merged 0eeb504 at 2026-11-28T23:41:55+08:00 (27)
+2026-11-28T15:43:03.307+00:00 [trial 10] [skip ci] confirmed: no push-triggered CD run for 0eeb504
+https://github.com/Zeeqie/guarded-deploy/actions/runs/46161325432
+2026-11-28T15:45:30.626+00:00 [trial 10] trial 10-R ok
+2026-11-28T15:45:36.274+00:00 [trial 11] precheck ok: live v17 serves 8f19398, its image is in ECR's newest 9
+2026-11-28T15:48:00.223+00:00 [trial 11] merged 5890b68 at 2026-11-28T23:47:55+08:00 (28)
+2026-11-28T15:50:10.850+00:00 [trial 11] trial 11-L ok
+2026-11-28T15:50:28.123+00:00 [trial 12] precheck ok: live v19 serves 5890b68, its image is in ECR's newest 9
+2026-11-28T15:53:06.705+00:00 [trial 12] merged 6c812db at 2026-11-28T23:52:59+08:00 (29)
+2026-11-28T15:55:22.276+00:00 [trial 12] trial 12-L ok
+2026-11-28T15:55:43.398+00:00 [trial 13] precheck ok: live v20 serves 6c812db, its image is in ECR's newest 9
+2026-11-28T15:58:02.128+00:00 [trial 13] merged 0303420 at 2026-11-28T23:57:57+08:00 (30)
+2026-11-28T16:00:07.432+00:00 [trial 13] trial 13-L ok
+2026-11-28T16:00:39.640+00:00 [trial 14] precheck ok: live v21 serves 0303420, its image is in ECR's newest 9
+2026-11-28T16:02:57.325+00:00 [trial 14] merged 64519b0 at 2026-11-29T00:02:51+08:00 (31)
+2026-11-28T16:05:05.656+00:00 [trial 14] trial 14-L ok
+2026-11-28T16:05:24.221+00:00 [trial 15] precheck ok: live v22 serves 64519b0, its image is in ECR's newest 9
+2026-11-28T16:07:42.045+00:00 [trial 15] merged 5ebfcab at 2026-11-29T00:07:37+08:00 (32)
+2026-11-28T16:09:47.669+00:00 [trial 15] trial 15-L ok
+2026-11-28T16:09:47.706+00:00 [trial 15] all trials done
+run_trials exit=0
