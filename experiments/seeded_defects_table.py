@@ -24,7 +24,7 @@ def ts(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def env(n: int) -> dict[str, str]:
+def env(n: int | str) -> dict[str, str]:
     lines = (RAW / f"defect-{n}.env").read_text().splitlines()
     return dict(line.split("=", 1) for line in lines if "=" in line)
 
@@ -38,7 +38,7 @@ def metric(log: str, name: str) -> datetime:
     return datetime.fromtimestamp(ms / 1000, tz=UTC)
 
 
-def ci_row(n: int, defect: str, expected: str) -> list[str]:
+def ci_row(n: int | str, defect: str, expected: str) -> list[str]:
     e, r = env(n), run(f"defect-{n}-ci-run.json")
     failed = [j for j in r["jobs"] if j["conclusion"] == "failure"]
     if not failed:
@@ -121,6 +121,11 @@ def main() -> None:
         ]
     )
 
+    after = [
+        ci_row("4-recheck-1", "#4 re-created, GD-0001 only", "CI security / GD-0001"),
+        ci_row("4-recheck-2", "#4 re-created, GD-0001 + text scan", "CI test / IAM text scan"),
+    ]
+
     head = [
         "#",
         "Defect",
@@ -135,8 +140,16 @@ def main() -> None:
     print("|" + "---|" * len(head))
     for row in rows:
         print("| " + " | ".join(row) + " |")
-    caught = sum(1 for row in rows[:6] if not row[5].startswith("NOT CAUGHT"))
-    print(f"\nCaught: {caught}/6 seeded defects")
+    caught = [not row[5].startswith("NOT CAUGHT") for row in rows[:6]]
+    print(f"\nOriginal pipeline: caught {sum(caught)}/6 seeded defects")
+
+    print("\n### After the #4 fix (fix/iam-wildcard-gate)\n")
+    print("| " + " | ".join(head) + " |")
+    print("|" + "---|" * len(head))
+    for row in after:
+        print("| " + " | ".join(row) + " |")
+    caught[3] = not after[-1][5].startswith("NOT CAUGHT")
+    print(f"\nAfter fix: caught {sum(caught)}/6 seeded defects")
 
 
 if __name__ == "__main__":

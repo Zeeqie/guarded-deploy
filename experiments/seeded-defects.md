@@ -14,7 +14,16 @@ Each defect was planted on its own branch from main `e5f63ad` to check whether t
 | #6 | image no longer bakes GIT_SHA (/health says dev) | CD pre-traffic smoke test | [PR](https://github.com/Zeeqie/guarded-deploy/pull/10) | [CD run](https://github.com/Zeeqie/guarded-deploy/actions/runs/45869569858) | CD deploy.sh `SMOKE_FAIL` (CI was green) | 107 s (merge to red) | no: alias v3 before, v3 after |
 | OIDC | dispatch on `experiment/oidc-negative-test` | STS AccessDenied | none | [run](https://github.com/Zeeqie/guarded-deploy/actions/runs/45870598270) | CD step "Assume deploy role via OIDC (no stored keys)": AccessDenied | 34 s | no (no credentials issued) |
 
-Caught: 5/6 seeded defects
+Original pipeline: caught 5/6 seeded defects
+
+### After the #4 fix (fix/iam-wildcard-gate)
+
+| # | Defect | Expected stage | PR | Run | Caught by | Push to red | Users affected |
+|---|---|---|---|---|---|---|---|
+| #4-recheck-1 | #4 re-created, GD-0001 only | CI security / GD-0001 | [PR](https://github.com/Zeeqie/guarded-deploy/pull/14) | [run](https://github.com/Zeeqie/guarded-deploy/actions/runs/46149226207) | NOT CAUGHT: all CI jobs green | 128 s to green | n/a (never merged) |
+| #4-recheck-2 | #4 re-created, GD-0001 + text scan | CI test / IAM text scan | [PR](https://github.com/Zeeqie/guarded-deploy/pull/15) | [run](https://github.com/Zeeqie/guarded-deploy/actions/runs/46149564066) | CI `test` job, step "Run pytest" | 52 s | no (never merged) |
+
+After fix: caught 6/6 seeded defects
 
 ## What each defect was, and the evidence
 
@@ -30,7 +39,11 @@ Caught: 5/6 seeded defects
 
 ## Findings
 
-1. **#4 slipped through: Trivy 0.76.1 doesn't evaluate the IAM wildcard check (AWS-0057).** `trivy config --include-non-failures` on infra/ lists every IAM check it ran (password policy, root, S3, pass-role). AWS-0057 isn't one of them, whether the policy is an inline `jsonencode`, an `aws_iam_policy_document` statement, or an `aws_iam_policy` resource. Only code review would have stopped this. A deploy role with `Action = "*"` is the most damaging defect in this list. A stolen CD token would become account admin. Fix options are listed in the checkpoint report. None is implemented yet.
+1. **#4 slipped through the original pipeline (5/6), now fixed (6/6).**
+   - *Why it slipped:* built-in AWS-0057 is `deprecated: true` and has **no rules** in checks bundle 2. It was re-added as an empty stub in [aquasecurity/trivy-checks@c292eb6](https://github.com/aquasecurity/trivy-checks/commit/c292eb6737e06dc21006cc508391b065cfd5601f) (2025-01-14, "add removed Go checks as deprecated"). Nothing else in Trivy checks for wildcard IAM actions.
+   - *Fix attempt 1, a custom Rego check GD-0001 (`.trivy/checks/`):* it catches every fixture style, but it **missed the re-created defect in CI** (re-check 1). Bisecting showed that Trivy 0.76.1 keeps only **one inline `aws_iam_role_policy` per role** in its IAM model, so a second wildcard inline policy on the deploy role is invisible to every Trivy IAM check. No upstream issue found; not filed.
+   - *Fix attempt 2, plus a stdlib text scan (`tests/test_iam_no_wildcards.py`):* it reads raw `.tf` text, so it can't share Trivy's model blind spot. Caught in the CI `test` job (re-check 2). Both gates stay: the text scan for anything written in the file, GD-0001 for evaluated policies (actions built from locals or variables).
+   - Lesson: a scanner passing is evidence only for the cases you've proven it sees. Test the gate against the real code shape, not just a minimal fixture.
 2. **Defense in depth worked where it existed.** #5 never reached GitHub (push protection), and ruff's bandit rule S105 and Trivy's secret scanner would both have caught it next (verified locally). #6 passed every static gate and was stopped by the pre-traffic smoke test, with zero user exposure.
 3. **#6 recovery (fix forward):** revert PR [#11](https://github.com/Zeeqie/guarded-deploy/pull/11) → CD deployed v5. `curl /health` → `a26cb7b2f011e787f48a4c46243ed24f8ff169e7` = revert merge SHA (`defect-6-revert-deploy-sh.log`). Main was undeployable for about 6 min 20 s (bad merge committed 17:39:23Z → revert `DEPLOY_OK` 17:45:43Z), but live never ran the bad image.
 4. **Side effects to know:** version 4 (the `dev` image) still exists as an unused published version, and its image is in ECR. ECR has 5 images (keep-last-10).
