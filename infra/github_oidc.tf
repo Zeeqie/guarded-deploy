@@ -87,3 +87,19 @@ resource "aws_iam_role_policy" "github_deploy" {
   role   = aws_iam_role.github_deploy.id
   policy = data.aws_iam_policy_document.github_deploy.json
 }
+
+# SEEDED DEFECT #4 (re-check after GD-0001): admin-equivalent policy. Code only:
+# NEVER plan or apply. Never merge.
+resource "aws_iam_role_policy" "seeded_defect_wildcard" {
+  name = "seeded-defect-wildcard"
+  role = aws_iam_role.github_deploy.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid      = "SeededDefectAdmin"
+      Effect   = "Allow"
+      Action   = "*"
+      Resource = "*"
+    }]
+  })
+}
