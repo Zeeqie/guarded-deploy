@@ -11,9 +11,16 @@
 #   the latest CD run concluded as the previous trial expected; live's image is among the 9
 #   newest ECR images (this trial pushes 1 more, keep-last-10 must never evict live); live
 #   /health version == the SHA we expect live to serve.
+# Read-only lookups (gh run list/view, gh variable get, aws get/describe/list, sts identity) go
+# through ro(): up to 3 retries after 2 s, 5 s, 10 s, each retry logged. Anything that writes
+# (push, PR create, merge, workflow dispatch) is NEVER retried. curl /health is not retried
+# either: a flaky live endpoint is a finding, not noise.
+# Any unexpected failure triggers on_err(): failing line, command and exit code are written to
+# that trial's trial.env, then the run stops.
+# Resume after an R trial with EXPECT_LAST_CD=failure (the injected run is red by design).
 # Raw data per trial: $TRIALS_RAW_DIR/<NN>-<K>/, OUTSIDE the repo during the run (the clean-tree
 # precheck would fail otherwise); copy to experiments/raw/trials/ afterwards. No account ID in it.
-set -euo pipefail
+set -Eeuo pipefail # -E: functions and subshells inherit the ERR trap
 
 PLAN="${1:?plan, e.g. \"L R L R L R L R L R L L L L L\"}"
 FIRST_N="${2:-1}"
@@ -25,39 +32,66 @@ STATE="${RAW}/expected_live_sha" # SHA live must serve before the next trial
 cd "$ROOT"
 case "$(cd "$(dirname "$RAW")" 2>/dev/null && pwd)/" in "${ROOT}/"*) echo "TRIALS_RAW_DIR must be outside the repo" >&2; exit 1 ;; esac
 
-API_URL="$(gh variable get API_URL --repo "$REPO")"
-API_URL="${API_URL%/}"
-ACCOUNT="$(aws sts get-caller-identity --query Account --output text)" # never printed
-mkdir -p "$RAW"
-
 now() { python3 -c 'import datetime;print(datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="milliseconds"))'; }
 log() { printf '%s [trial %s] %s\n' "$(now)" "${N:-?}" "$*"; }
+
+on_err() {
+  local rc="$1" line="$2" cmd="$3"
+  trap - ERR
+  log "ABORT: unexpected failure: line ${line}, exit ${rc}: ${cmd}"
+  if [[ -n "${DIR:-}" && -d "${DIR:-}" ]]; then
+    printf 'status=aborted\nreason=unexpected failure (on_err)\nfailed_line=%s\nfailed_command=%s\nexit_code=%s\n' \
+      "$line" "$cmd" "$rc" >>"${DIR}/trial.env"
+  fi
+  exit "$rc"
+}
+trap 'on_err $? $LINENO "$BASH_COMMAND"' ERR
+
+# Retry a READ-ONLY command: 1 try + up to 3 retries (2 s, 5 s, 10 s). Never use for writes.
+ro() {
+  local delay attempt=1
+  for delay in 2 5 10 ""; do
+    if "$@"; then return 0; fi
+    [[ -z "$delay" ]] && break
+    log "RETRY ${attempt}/3 in ${delay}s: $1 $2 $3" >&2
+    sleep "$delay"
+    attempt=$((attempt + 1))
+  done
+  log "read-only lookup failed after 3 retries: $1 $2 $3" >&2
+  return 1
+}
+
+API_URL="$(ro gh variable get API_URL --repo "$REPO")"
+API_URL="${API_URL%/}"
+ACCOUNT="$(ro aws sts get-caller-identity --query Account --output text)" # never printed
+mkdir -p "$RAW"
+
 die() {
   log "ABORT: $*"
   if [[ -n "${DIR:-}" ]]; then printf 'status=aborted\nreason=%s\n' "$*" >>"${DIR}/trial.env"; fi
   exit 1
 }
 health_version() { curl -sS --max-time 10 "${API_URL}/health" | jq -r .version; }
-live_version() { aws lambda get-alias --function-name "$FN" --name live --query FunctionVersion --output text; }
+live_version() { ro aws lambda get-alias --function-name "$FN" --name live --query FunctionVersion --output text; }
 
 # Poll a run until it completes (max $2 seconds); prints its conclusion.
 wait_run() {
   local id="$1" max="$2" waited=0 status
   while :; do
-    status="$(gh run view "$id" --repo "$REPO" --json status --jq .status)"
+    status="$(ro gh run view "$id" --repo "$REPO" --json status --jq .status)"
     [[ "$status" == "completed" ]] && break
     ((waited >= max)) && die "run $id still $status after ${max}s"
     sleep 10
     waited=$((waited + 10))
   done
-  gh run view "$id" --repo "$REPO" --json conclusion --jq .conclusion
+  ro gh run view "$id" --repo "$REPO" --json conclusion --jq .conclusion
 }
 
 # First run of workflow $1 for commit $2 (and event $3), waiting up to $4 s for it to appear.
 find_run() {
   local wf="$1" sha="$2" event="$3" max="$4" waited=0 id=""
   while [[ -z "$id" ]]; do
-    id="$(gh run list --repo "$REPO" --workflow "$wf" --commit "$sha" --event "$event" \
+    id="$(ro gh run list --repo "$REPO" --workflow "$wf" --commit "$sha" --event "$event" \
       --json databaseId --jq '.[0].databaseId // empty')"
     [[ -n "$id" ]] && break
     ((waited >= max)) && return 1
@@ -68,21 +102,21 @@ find_run() {
 }
 
 precheck() {
-  aws sts get-caller-identity >/dev/null || die "AWS session invalid (run aws login)"
+  ro aws sts get-caller-identity >/dev/null || die "AWS session invalid (run aws login)"
   git fetch -q origin main
   [[ -z "$(git status --porcelain)" ]] || die "working tree not clean"
   [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || die "local main != origin/main"
   local busy
-  busy="$(gh run list --repo "$REPO" --workflow CD --limit 20 --json status \
+  busy="$(ro gh run list --repo "$REPO" --workflow CD --limit 20 --json status \
     --jq '[.[]|select(.status!="completed")]|length')"
   [[ "$busy" == "0" ]] || die "$busy CD run(s) not completed"
   local last
-  last="$(gh run list --repo "$REPO" --workflow CD --limit 1 --json conclusion --jq '.[0].conclusion')"
+  last="$(ro gh run list --repo "$REPO" --workflow CD --limit 1 --json conclusion --jq '.[0].conclusion')"
   [[ "$last" == "${EXPECT_LAST_CD:-success}" ]] || die "latest CD run concluded '$last', expected '${EXPECT_LAST_CD:-success}'"
   local tag newest9
-  tag="$(aws lambda get-function --function-name "$FN" --qualifier live --query Code.ImageUri --output text)"
+  tag="$(ro aws lambda get-function --function-name "$FN" --qualifier live --query Code.ImageUri --output text)"
   tag="${tag##*:}"
-  newest9="$(aws ecr describe-images --repository-name "$FN" \
+  newest9="$(ro aws ecr describe-images --repository-name "$FN" \
     --query 'reverse(sort_by(imageDetails,&imagePushedAt))[0:9][].imageTags[0]' --output text)"
   grep -qw "$tag" <<<"$newest9" || die "live image ${tag:0:7} not among the 9 newest ECR images"
   local hv
@@ -126,16 +160,16 @@ trivial_pr() { # creates, CI-gates and merges a one-line PR; sets MERGE_SHA, MER
 }
 
 save_cd() { # $1 run id
-  gh run view "$1" --repo "$REPO" --json databaseId,url,event,headSha,conclusion,createdAt,updatedAt,jobs \
+  ro gh run view "$1" --repo "$REPO" --json databaseId,url,event,headSha,conclusion,createdAt,updatedAt,jobs \
     >"${DIR}/cd-run.json"
-  gh run view "$1" --repo "$REPO" --log |
+  ro gh run view "$1" --repo "$REPO" --log |
     awk -F'\t' 'index($2,"Deploy (smoke")==1{sub(/^\xef\xbb\xbf/,"",$3); sub(/^[0-9T:.\-]+Z /,"",$3); print $3}' |
     grep -E '^(METRIC|20[0-9]{2}-)' >"${DIR}/deploy-sh.log" || true
   if grep -rq "$ACCOUNT" "$DIR"; then die "account ID found in raw files"; fi
 }
 
 [[ -f "$STATE" ]] || health_version >"$STATE"
-EXPECT_LAST_CD=success
+EXPECT_LAST_CD="${EXPECT_LAST_CD:-success}"
 N=$((FIRST_N - 1))
 for KIND in $PLAN; do
   N=$((N + 1))
