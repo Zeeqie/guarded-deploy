@@ -1,0 +1,13 @@
+# aws cloudtrail lookup-events EventName=AssumeRoleWithWebIdentity 17:46:00Z-17:48:30Z (account ID stripped)
+2026-11-26T17:47:27Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:26Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:14Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:13Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:11Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:08Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:07Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:07Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:06Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:06Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:05Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
+2026-11-26T17:47:05Z AccessDenied sub=repo:Zeeqie@260482962/guarded-deploy@1431477050:ref:refs/heads/experiment/oidc-negative-test
